@@ -188,7 +188,8 @@ class userMain(QMainWindow,Ui_MainWindow):
         #~~~~~~~~~~~加载用户变量表格~~~~~~~~~~~~~
         if debug==True:
             logging.debug("开始导入变量中文名、变量类型参数......")
-        self.df = pd.read_csv('./varstatic.csv',encoding='gbk')
+        self.df = pd.read_csv(os.path.abspath('varstatic.csv'),encoding='gbk')
+
         if debug==True:
             print('导入的变量表格为：\r',self.df)
         if debug==True:
@@ -771,7 +772,7 @@ class userMain(QMainWindow,Ui_MainWindow):
     def map_create_cb(self):   #呈现到leftwidget
         if self.mapDict !={}:
             my_dict = self.mapDict
-            with open('./userchoose.csv','w',newline="") as f:
+            with open(os.path.abspath('userchoose.csv'),'w',newline="") as f:
                 writer1 = csv.writer(f)
                 a = 'address'
                 b = 'name'
@@ -1104,18 +1105,6 @@ class RunThread1(QtCore.QThread):
         self.parent = parent #将主界面信息传过来
     
     def run(self): #接收主线程送来的信号进行保存
-        '''
-        print("~~~~~~~~~~~~~~进入保存线程了~~~~~~~~~~~~~~~~·")
-        if self.parent.writer_1:
-            self.parent.writer_1.writerow([i for i in self.parent.save_dict.keys()])
-        else:
-            QMessageBox.warning(self,'请打开保存文件线程','请点击保存文件按钮')
-        #将结果存入csv
-        while True:
-            for key,value in self.parent.save_dict.items():
-                self.parent.writer_1.writerow([utils.get_current_time(),key,value])
-            time.sleep(0.1) #注意以后改
-        '''
         while True:
             #存入dataframe
             self.parent.save_df = self.parent.save_df.append(self.parent.save_dict,ignore_index=True)

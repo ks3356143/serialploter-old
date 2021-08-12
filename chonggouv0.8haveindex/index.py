@@ -19,11 +19,12 @@ if __name__ == "__main__":
     # win.show()
 
     sys.exit(app.exec_())
+
     '''
     lightPalette.setColor(QPalette.WindowText, QColor(0, 0, 0))
     lightPalette.setColor(QPalette.Button, QColor(240, 240, 240))
-    lightPalette.setColor(QPalette.Light, QColor(180, 180, 180))
-    lightPalette.setColor(QPalette.Midlight, QColor(92, 235, 237))
+    lightPalette.setColor(QPalette.Light, QColor(0, 180, 180))
+    lightPalette.setColor(QPalette.Midlight, QColor(21, 199, 240))
     lightPalette.setColor(QPalette.Dark, QColor(225, 225, 225))
     lightPalette.setColor(QPalette.Text, QColor(0, 0, 0))
     lightPalette.setColor(QPalette.BrightText, QColor(0, 0, 0))
@@ -34,7 +35,7 @@ if __name__ == "__main__":
     lightPalette.setColor(QPalette.Highlight, QColor(76, 163, 224))
     lightPalette.setColor(QPalette.HighlightedText, QColor(0, 0, 0))
     lightPalette.setColor(QPalette.Link, QColor(0, 162, 232))
-    lightPalette.setColor(QPalette.AlternateBase, QColor(247, 247, 247))
+    lightPalette.setColor(QPalette.AlternateBase, QColor(242, 247, 247))
     lightPalette.setColor(QPalette.ToolTipBase, QColor(240, 240, 240))
     lightPalette.setColor(QPalette.ToolTipText, QColor(0, 0, 0))
     '''
