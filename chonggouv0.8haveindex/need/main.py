@@ -20,6 +20,7 @@ import sys
 import re
 import codecs
 import threading
+import binascii
 
 from PyQt5 import QtCore
 from PyQt5.QtGui import QIntValidator
@@ -208,6 +209,8 @@ class userMain(QMainWindow,Ui_MainWindow):
         self.pushButtonSaveCancel.clicked.connect(self.save_file_cancel) #点击停止保存文件
         self.pushButton_bin.clicked.connect(self.bin_file_cb) #点击选中文件获得全类变量绝对路径self.map_file_name
         self.pushButton_send_bin.clicked.connect(self.send_bin_cb) #点击发送bin文件
+        self.bin_send_thread = Send_bin_Thread(self) #创建发送bin文件线程
+        self.bin_send_thread.sin_out.connect(self.text_display) #把发送bin文件的消息传给text_display函数
         self.pushButton.clicked.connect(self.show_echarts) #点击展示echarts图像
         self.pushButton_2.clicked.connect(self.choosecsv) #选择csv文件
 
@@ -931,38 +934,21 @@ class userMain(QMainWindow,Ui_MainWindow):
             self.lineEdit.setText(str(self.bin_file_name))
         else:
             QMessageBox.warning(self,"还未选择bin文件",'请选择你要发送的bin文件')
-
-    def send_bin_cb(self): #点击发送按钮发送bin二进制文件
-        if self.com.getPortState():
-            if self.bin_file_name[0]:
-                ZT1 = 0xEB
-                ZT2 = 0x90
-                MLZ = 0x44
-                #先发送重构bin文件指令，先获取bin文件字节长度
-                self.file_bin = open(self.bin_file_name[0],"rb")
-                bin_length = len(self.file_bin.read())
-                print("发送bin文件长度位：",bin_length)
-
-                index = 0
-                for i in range(240):
-                    c = self.file_bin.read(1)
-                    print("C的值为：",c)
-                    #将字节转16进制字符
-                    ssss = str(binascii.b2a_hex(c))[2:-1]
-                    print("16进制字符转为",ssss)
-                    print("@@@@@@@@@",bytes().fromhex(ssss))
-                    #write(bytes().fromhex(ssss))
-                    break
-
-                print("发送bin文件长度",index)
-                print('正在发送bin文件')
-                self.tool.uart.send_bin_data(send_data)
-                QMessageBox.information(self,"发送状态","发送完成")
+    
+    #点击发送bin文件按钮，开启线程，吧tabWidget关闭
+    def send_bin_cb(self): 
+        try:
+            if self.com.getPortState():
+                if self.bin_file_name[0]:
+                    #self.tabWidget.setEnabled(False)
+                    self.bin_send_thread.start()
+                else:
+                    QMessageBox.warning(self,"未选择bin文件","请先选择bin文件再发送")
             else:
-                QtWidgets.QMessageBox.warning(self,"还未选择bin文件",'请选择你要发送的bin文件')
-        else:
-            QtWidgets.QMessageBox.warning(self,"串口通信",'串口未打开')
-        pass
+                QMessageBox.warning(self,"串口未打开","先打开串口才能发送")
+        except:
+            QMessageBox.warning(self,"开始发送bin文件","发送失败，原因未知")
+        
 
     #定义点击echatrs显示按钮函数
     def show_echarts(self):
@@ -1099,6 +1085,9 @@ class userMain(QMainWindow,Ui_MainWindow):
         self.update_comboBoxPortList()
         pass
 
+    def text_display(self,text):
+        self.textEdit.append(text)
+
 class RunThread1(QtCore.QThread):
     def __init__(self,parent):
         super().__init__()
@@ -1112,6 +1101,79 @@ class RunThread1(QtCore.QThread):
             
     def stop(self):
         self.terminate()
+class Send_bin_Thread(QtCore.QThread):
+    sin_out = QtCore.pyqtSignal(str)
+    def __init__(self,parent):
+        super().__init__()
+        self.parent = parent
+
+    def run(self):
+        self.sin_out.emit('开始......')
+        self.sin_out.emit('发送重构代码指令......')
+        self.sin_out.emit('读取指令模板......')
+        ZT1 = 'EB'
+        ZT2 = '90'
+        MLZ = '44'
+        #先发送重构bin文件指令，先获取bin文件字节长度
+        self.sin_out.emit('读取二进制bin文件......')
+        file_bin = open(self.parent.bin_file_name,"rb") #二进制读取bin文件
+
+        self.sin_out.emit('正在获取二进制bin文件byte数据......')
+        bin_data = file_bin.read() #把全部byte读出来
+        self.sin_out.emit('二进制文件数据为：{}'.format(bin_data))
+
+        self.sin_out.emit('正在获取二进制bin文件byte数据的长度......')
+        bin_length = len(bin_data)  #把字节长度读出来
+        self.sin_out.emit(f'byte数据的长度为{bin_length}......')
+
+        #准备发送重构代码指令
+        bin_len_bao_num = bin_length//240 #bin_len_bao表示有多少个240字节的包
+        baonum = "".join("{:02X}".format(bin_len_bao_num))
+
+        bin_len_shengxia = bin_length%240  #bin_len_shengxia表示除开240字节包后还剩多少字节
+        shengxiawei = "".join("{:02X}".format(bin_len_shengxia))
+
+        self.sin_out.emit('准备发送重构指令，240字节指令......')
+
+        send_order = ''.join([ZT1,ZT2,'02',MLZ,baonum,shengxiawei]) #这里02可能要改@@@@@
+        self.sin_out.emit('组合现在的指令为{}......'.format(send_order))
+
+        #生产校验位,并发送重构指令
+        checksum = 0
+        for i,j in zip(send_order[8::2],send_order[9::2]):
+            checksum += int('0x' + (i + j),16)
+        check_num = ('{:04x}'.format(checksum & 0xFFFF)).upper() #【更变！】~~~~~
+        send_code = send_order + ('00'*(238-len(send_order)//2)) +check_num
+
+        self.sin_out.emit('重构指令生成成功......发送完毕！')
+        buf = bytes.fromhex(send_code)
+        self.parent.com.send_order(buf)
+        self.sin_out.emit('发送完毕！，开始发送代码包')
+        time.sleep(5)
+
+        #开始发送包
+        #先将bin_data变成字符串480个字符（240字节）
+        bin_data_str = "".join(["{:02X}".format(i) for i in bin_data])
+        self.sin_out.emit('需要发送的数据为：{}'.format(bin_data_str))
+        self.sin_out.emit('需要发送的数据长度位为：{}'.format(len(bin_data_str)))
+        for i in range(bin_len_bao_num): #整包发一次
+            temp1 = bin_data_str[i*480:i*480+480]
+            buf1 = bytes.fromhex(temp1)
+            self.parent.com.send_order(buf1)
+            self.sin_out.emit('当前发送的包序号为：{}'.format(i+1))
+            time.sleep(1)
+        #最后小包发一次
+        temp2 = bin_data_str[bin_len_bao_num*480:]
+        buf2 = bytes.fromhex(temp2)
+        self.parent.com.send_order(buf2)
+        self.sin_out.emit('当前发送的包序号为尾包')
+        time.sleep(1)
+        self.sin_out.emit('发送完毕')
+        
+
+                
+
+
 
 if __name__ == "__main__":
     QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)

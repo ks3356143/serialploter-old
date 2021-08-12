@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'chuankou.ui'
+# Form implementation generated from reading ui file '../chuankou.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -369,8 +369,9 @@ class Ui_MainWindow(object):
         self.tabWidget.addTab(self.tab, "")
         self.tab_2 = QtWidgets.QWidget()
         self.tab_2.setObjectName("tab_2")
+        self.gridLayout_14 = QtWidgets.QGridLayout(self.tab_2)
+        self.gridLayout_14.setObjectName("gridLayout_14")
         self.groupBox_7 = QtWidgets.QGroupBox(self.tab_2)
-        self.groupBox_7.setGeometry(QtCore.QRect(0, 0, 301, 111))
         self.groupBox_7.setObjectName("groupBox_7")
         self.formLayout_2 = QtWidgets.QFormLayout(self.groupBox_7)
         self.formLayout_2.setObjectName("formLayout_2")
@@ -386,6 +387,17 @@ class Ui_MainWindow(object):
         self.label_5 = QtWidgets.QLabel(self.groupBox_7)
         self.label_5.setObjectName("label_5")
         self.formLayout_2.setWidget(1, QtWidgets.QFormLayout.SpanningRole, self.label_5)
+        self.gridLayout_14.addWidget(self.groupBox_7, 0, 0, 1, 1)
+        self.verticalLayout_8 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_8.setObjectName("verticalLayout_8")
+        self.textEdit = QtWidgets.QTextEdit(self.tab_2)
+        self.textEdit.setObjectName("textEdit")
+        self.verticalLayout_8.addWidget(self.textEdit)
+        self.progressBar = QtWidgets.QProgressBar(self.tab_2)
+        self.progressBar.setProperty("value", 0)
+        self.progressBar.setObjectName("progressBar")
+        self.verticalLayout_8.addWidget(self.progressBar)
+        self.gridLayout_14.addLayout(self.verticalLayout_8, 1, 0, 1, 1)
         self.tabWidget.addTab(self.tab_2, "")
         self.tab_3 = QtWidgets.QWidget()
         self.tab_3.setObjectName("tab_3")
@@ -468,7 +480,7 @@ class Ui_MainWindow(object):
         self.toolBar.addAction(self.action_shutdown)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(2)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -524,6 +536,7 @@ class Ui_MainWindow(object):
         self.pushButton_bin.setText(_translate("MainWindow", "打开文件"))
         self.pushButton_send_bin.setText(_translate("MainWindow", "点击发送"))
         self.label_5.setText(_translate("MainWindow", "文件选择为："))
+        self.progressBar.setFormat(_translate("MainWindow", "%p%"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "分包发送重构代码"))
         self.label_7.setText(_translate("MainWindow", "点击展示"))
         self.pushButton.setText(_translate("MainWindow", "显示图形"))

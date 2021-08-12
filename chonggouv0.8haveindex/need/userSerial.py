@@ -308,7 +308,7 @@ class userSerial(QObject):
                         print('最后截取到的数据为:',recv_data)
                         print('最后截取到的数据长度为:',len(recv_data))
                         #把recv_data转化为str，用于截取
-                        recv_data_str = "".join(["{:02X}".format(i) for i in recv_data])
+                        recv_data_str = "".join(["{:02X}".format(i) for i in recv_data]) #重点！！！
                         print('转化为字符串后的获取的数据:',recv_data_str,'长度为:',len(recv_data_str)) #测试数据为48
 
                         #以下为取有用数据，计数jishu=0，没取到一个加1，遇到截取完了后退出循环
