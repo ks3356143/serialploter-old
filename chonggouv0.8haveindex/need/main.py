@@ -83,7 +83,7 @@ codecs.register_error("userCodecsError",userCodecsError)
 class userMain(QMainWindow,Ui_MainWindow):
     #自定义信号用来发送底层的dict数据给子绘图窗口数据
     dictsignal = QtCore.pyqtSignal(dict)
-
+    sin_out1 = QtCore.pyqtSignal(str)
     #自定义信号和槽来显示接收数据
     def __init__(self):
         super().__init__()
@@ -207,12 +207,15 @@ class userMain(QMainWindow,Ui_MainWindow):
         self.pushButton_raise.clicked.connect(self.create_order_send) #发送生产的指令
         self.pushButtonSave.clicked.connect(self.save_file_thread) #点击启动保存数据线程
         self.pushButtonSaveCancel.clicked.connect(self.save_file_cancel) #点击停止保存文件
-        self.pushButton_bin.clicked.connect(self.bin_file_cb) #点击选中文件获得全类变量绝对路径self.map_file_name
+        self.pushButton.clicked.connect(self.show_echarts) #点击展示echarts图像
+        self.pushButton_2.clicked.connect(self.choosecsv) #选择csv文件
+        #~~~~~~~~~~~重构BIN文件发送界面~~~~~~~~~~~~~
+        self.pushButton_3.clicked.connect(self.chougou_cb) #点击发送重构指令
+        self.pushButton_bin.clicked.connect(self.bin_file_cb) #点击选中文件获得全类变量绝对路径self.map_file_name     
         self.pushButton_send_bin.clicked.connect(self.send_bin_cb) #点击发送bin文件
         self.bin_send_thread = Send_bin_Thread(self) #创建发送bin文件线程
         self.bin_send_thread.sin_out.connect(self.text_display) #把发送bin文件的消息传给text_display函数
-        self.pushButton.clicked.connect(self.show_echarts) #点击展示echarts图像
-        self.pushButton_2.clicked.connect(self.choosecsv) #选择csv文件
+        self.sin_out1.connect(self.text_display)
 
         #~~~~~~~~~~生产Table1~用来展示变量值~~~~~~~~~
         self.table1.setColumnCount(2)#信息列数固定为2
@@ -973,11 +976,11 @@ class userMain(QMainWindow,Ui_MainWindow):
         except:
             QMessageBox.warning(self,"未选择csv文件","请先选择csv文件后点击显示图形")
         
-
-        js  = "setValue({},{})".format(csv_list,keylist)
-        self.webView2.page().runJavaScript(js)
-        # except:
-        #     QMessageBox.warning(self,'请选择csv文件','请选择csv文件后才能展示数据')
+        try:
+            js  = "setValue({},{})".format(csv_list,keylist)
+            self.webView2.page().runJavaScript(js)
+        except:
+            QMessageBox.warning(self,'请选择csv文件','请选择csv文件后才能展示数据')
             
             
     def choosecsv(self):
@@ -987,11 +990,68 @@ class userMain(QMainWindow,Ui_MainWindow):
             self.lineEdit_3.setText(str(self.csv_name))
         else:
             QMessageBox.warning(self,"还未选择csv文件",'请选择你要发送的csv文件')
+            
+    def chougou_cb(self):
+        self.sin_out1.emit('发送重构代码指令......')
+        ZT1 = 'E1'
+        ZT2 = '16'
+        MLZ = '44'
         
-        
-        
+        file_bin = open(self.bin_file_name,"rb") #二进制读取bin文件
+        self.sin_out1.emit('正在获取二进制bin文件byte数据......')
+        bin_data = file_bin.read() #把全部byte读出来
+        #self.sin_out1.emit('二进制文件数据为：{}'.format(bin_data))
 
+        self.sin_out1.emit('正在获取二进制bin文件byte数据的长度......')
+        bin_length = len(bin_data)  #把字节长度读出来
+        bin_res_length = "".join("{:08X}".format(bin_length))
+        self.sin_out1.emit(f'byte数据的长度为{bin_length}......')
 
+        #准备发送重构代码指令
+        bin_len_bao_num = bin_length//232 #bin_len_bao表示有多少个232字节的包
+        baonum = "".join("{:04X}".format(bin_len_bao_num + 1))
+        self.sin_out1.emit(f'分包总数为{baonum}')
+
+        bin_len_shengxia = bin_length%232  #bin_len_shengxia表示除开232字节包后还剩多少字节
+        shengxiawei = "".join("{:02X}".format(bin_len_shengxia))
+
+        self.sin_out1.emit('计算有效长度.....')
+        youxiaolenth = '08'
+        self.sin_out1.emit(f'有效长度{youxiaolenth}')
+
+        send_order1 = ''.join([ZT1,ZT2,youxiaolenth,MLZ,baonum,bin_res_length]) #这里02可能要改@@@@@
+        self.sin_out1.emit('组合现在的指令为{}'.format(send_order1))
+        
+        #重构数据校验
+        chonggou_str = "".join(["{:02X}".format(i) for i in bin_data])
+        #self.sin_out1.emit(f'重构数据字符串为{chonggou_str}')
+        
+        checksum = 0
+        for i,j in zip(chonggou_str[8::2],chonggou_str[9::2]):
+            checksum += int('0x' + (i + j),16)
+        checksum_chonggou = ('{:04x}'.format(checksum & 0xFFFF)).upper()
+        self.sin_out1.emit(f'重构数据校验和为{checksum_chonggou}')
+        
+        #组装send_order2
+        send_order2 = ''.join([ZT1,ZT2,youxiaolenth,MLZ,baonum,bin_res_length,checksum_chonggou]) #这里02可能要改@@@@@
+        self.sin_out1.emit(f'组装后的指令为{send_order2}')
+        
+        #填充226字节的0x00
+        checksum1 = 0
+        for i,j in zip(send_order2[8::2],send_order2[9::2]):
+            checksum1 += int('0x' + (i + j),16)
+        checksum_end = ('{:04x}'.format(checksum1 & 0xFFFF)).upper()
+        self.sin_out1.emit(f'校验和为{checksum_end}')
+        
+        #组装最后指令
+        send_end = send_order2 + ('00' * 226) + checksum_end
+        self.sin_out1.emit(f'最后的指令为{send_end}')
+        
+        buf_send = bytes.fromhex(send_end)
+        self.sin_out1.emit(f'最后的指令的数据流为{buf_send}')
+        self.com.send_order(buf_send)
+        
+        
 
     #~~~~~~~~~~~~非被信号连接的函数，是函数连接的函数~~~~~~~~~~
     ##生成指令用到的链接函数
@@ -1101,6 +1161,7 @@ class RunThread1(QtCore.QThread):
             
     def stop(self):
         self.terminate()
+        
 class Send_bin_Thread(QtCore.QThread):
     sin_out = QtCore.pyqtSignal(str)
     def __init__(self,parent):

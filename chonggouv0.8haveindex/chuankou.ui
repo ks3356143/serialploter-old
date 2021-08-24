@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1025</width>
-    <height>792</height>
+    <width>1022</width>
+    <height>704</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,7 @@
     <item row="0" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -80,7 +80,7 @@
              <item row="1" column="0" colspan="3">
               <widget class="QComboBox" name="comboBoxPort">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
@@ -93,7 +93,7 @@
              <item row="2" column="0" colspan="2">
               <widget class="QPushButton" name="pushButtonOpen">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
@@ -109,7 +109,7 @@
              <item row="2" column="2">
               <widget class="QPushButton" name="pushButtonUpdate">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
@@ -135,7 +135,7 @@
              <item row="3" column="1" colspan="2">
               <widget class="QComboBox" name="comboBoxBand">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
@@ -145,7 +145,7 @@
              <item row="0" column="0" colspan="2">
               <widget class="QLabel" name="label_2">
                <property name="sizePolicy">
-                <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
@@ -621,41 +621,72 @@
        <attribute name="title">
         <string>分包发送重构代码</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_14">
-        <item row="0" column="0">
-         <widget class="QGroupBox" name="groupBox_7">
+       <layout class="QGridLayout" name="gridLayout_18">
+        <item row="0" column="1">
+         <widget class="QGroupBox" name="groupBox_10">
           <property name="title">
-           <string>发送bin文件</string>
+           <string>发送分布</string>
           </property>
-          <layout class="QFormLayout" name="formLayout_2">
+          <layout class="QGridLayout" name="gridLayout_17">
            <item row="0" column="0">
-            <widget class="QPushButton" name="pushButton_bin">
-             <property name="text">
-              <string>打开文件</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
             <widget class="QPushButton" name="pushButton_send_bin">
              <property name="text">
-              <string>点击发送</string>
+              <string>发送分包数据</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="0" colspan="2">
-            <widget class="QLineEdit" name="lineEdit"/>
-           </item>
-           <item row="1" column="0" colspan="2">
-            <widget class="QLabel" name="label_5">
-             <property name="text">
-              <string>文件选择为：</string>
+           <item row="1" column="0">
+            <widget class="QSpinBox" name="spinBox">
+             <property name="suffix">
+              <string>s</string>
+             </property>
+             <property name="prefix">
+              <string/>
+             </property>
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>20</number>
+             </property>
+             <property name="singleStep">
+              <number>1</number>
              </property>
             </widget>
            </item>
           </layout>
          </widget>
         </item>
-        <item row="1" column="0">
+        <item row="0" column="0">
+         <widget class="QGroupBox" name="groupBox_7">
+          <property name="title">
+           <string>发送bin文件</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_15">
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_5">
+             <property name="text">
+              <string>文件选择为：</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0" colspan="2">
+            <widget class="QLineEdit" name="lineEdit"/>
+           </item>
+           <item row="0" column="0" colspan="2">
+            <widget class="QPushButton" name="pushButton_bin">
+             <property name="text">
+              <string>打开文件</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <layout class="QGridLayout" name="gridLayout_19"/>
+        </item>
+        <item row="1" column="0" colspan="2">
          <layout class="QVBoxLayout" name="verticalLayout_8">
           <item>
            <widget class="QTextEdit" name="textEdit"/>
@@ -671,6 +702,49 @@
            </widget>
           </item>
          </layout>
+        </item>
+        <item row="1" column="3">
+         <layout class="QGridLayout" name="gridLayout_21"/>
+        </item>
+        <item row="0" column="2" colspan="2">
+         <widget class="QGroupBox" name="groupBox_9">
+          <property name="title">
+           <string>阶段控制</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_16">
+           <item row="0" column="0">
+            <layout class="QGridLayout" name="gridLayout_14">
+             <item row="0" column="0">
+              <widget class="QPushButton" name="pushButton_3">
+               <property name="text">
+                <string>发送重新编程请求</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QPushButton" name="pushButton_5">
+               <property name="text">
+                <string>发送烧写指令</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1" rowspan="2">
+              <widget class="QPushButton" name="pushButton_6">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>发送重启指令</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -770,7 +844,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1025</width>
+     <width>1022</width>
      <height>22</height>
     </rect>
    </property>
