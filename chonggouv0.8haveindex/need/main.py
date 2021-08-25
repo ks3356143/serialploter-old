@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+# from need.mystatuslist import ListView
 from pandas.core.frame import DataFrame
 LOG_FORMAT = "%(asctime)s>%(levelname)s>PID:%(process)d %(thread)d>%(module)s>%(funcName)s>%(lineno)d>%(message)s"
 logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT, )
@@ -23,9 +24,9 @@ import threading
 import binascii
 
 from PyQt5 import QtCore
-from PyQt5.QtGui import QIntValidator
-from PyQt5.QtCore import QTranslator
-from PyQt5.QtWidgets import QDialog,QMainWindow,QMessageBox,QComboBox,QLabel,QActionGroup
+from PyQt5.QtGui import QFont, QIntValidator
+from PyQt5.QtCore import QTranslator, Qt, pyqtSignal
+from PyQt5.QtWidgets import QDialog,QMainWindow,QMessageBox,QComboBox,QLabel,QActionGroup,QAbstractItemView,QAbstractScrollArea
 from PyQt5.QtWidgets import QFileDialog,QListWidgetItem,QHeaderView,QTableWidgetItem,QScrollArea,QVBoxLayout
 from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets
 from PyQt5.QtWebEngineWidgets import QWebEngineSettings
@@ -109,6 +110,7 @@ class userMain(QMainWindow,Ui_MainWindow):
         self.com.signalRcv.connect(self.on_com_signalRcv) #当接收到信号
         self.com.signalRcvError.connect(self.on_com_signalRcvError) #当接收到错误数据信号连接
         self.com.signalRcvdata.connect(self.on_com_signalRcvdata) #当解析变成dict后发送到UI
+        self.com.signalguangbo.connect(self.on_com_signalguangbo) #广播消息传数组过来了
 
         #初始化端口组合list和波特率list
         self.update_comboBoxPortList()#更新系统支持的串口设备并更新端口组合框内容
@@ -211,10 +213,11 @@ class userMain(QMainWindow,Ui_MainWindow):
         self.pushButton_2.clicked.connect(self.choosecsv) #选择csv文件
         #~~~~~~~~~~~重构BIN文件发送界面~~~~~~~~~~~~~
         self.pushButton_3.clicked.connect(self.chougou_cb) #点击发送重构指令
-        self.pushButton_bin.clicked.connect(self.bin_file_cb) #点击选中文件获得全类变量绝对路径self.map_file_name     
+        self.pushButton_bin.clicked.connect(self.bin_file_cb) #点击选中文件获得全类变量绝对路径self.map_file_name
         self.pushButton_send_bin.clicked.connect(self.send_bin_cb) #点击发送bin文件
         self.bin_send_thread = Send_bin_Thread(self) #创建发送bin文件线程
         self.bin_send_thread.sin_out.connect(self.text_display) #把发送bin文件的消息传给text_display函数
+        self.bin_send_thread.signal_proccessbar.connect(self.proccessbar_display)
         self.sin_out1.connect(self.text_display)
 
         #~~~~~~~~~~生产Table1~用来展示变量值~~~~~~~~~
@@ -227,6 +230,18 @@ class userMain(QMainWindow,Ui_MainWindow):
 
         #下面函数用于第三个tab页面
         self.loadweb()
+        
+        #~~~~~~~~~重构代码用的~~~~~~~~~~~
+        self.listWidget_2.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.pushButton_7.clicked.connect(self.itemroall_cb)
+        self.pushButton_4.clicked.connect(self.send_fenbao_cb)
+        
+        
+        self.chonggou_step = {'44':'第一阶段',"33":"第二阶段","55":"第三阶段","66":"第四阶段"}
+        self.wancheng_status = {'00':'未完成','01':'已完成'}
+        self.cuowuma = {'01':'暂未定义'}
+        
+        
 
 
 #~~~~~~~~~~~~~~~~~~~~初始化直接运行的函数（也就是起始运行一次）~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -935,6 +950,8 @@ class userMain(QMainWindow,Ui_MainWindow):
         print(self.bin_file_name) #返回了文件绝对路径file_name[0]为绝对路径
         if ok:
             self.lineEdit.setText(str(self.bin_file_name))
+            #先清空listWidget_2然后添加item
+            self.listWidget_2.clear()
         else:
             QMessageBox.warning(self,"还未选择bin文件",'请选择你要发送的bin文件')
     
@@ -944,7 +961,10 @@ class userMain(QMainWindow,Ui_MainWindow):
             if self.com.getPortState():
                 if self.bin_file_name[0]:
                     #self.tabWidget.setEnabled(False)
-                    self.bin_send_thread.start()
+                    try:
+                        self.bin_send_thread.start()
+                    except:
+                        QMessageBox.warning(self,"未知原因","未知原因导致失败")
                 else:
                     QMessageBox.warning(self,"未选择bin文件","请先选择bin文件再发送")
             else:
@@ -981,7 +1001,28 @@ class userMain(QMainWindow,Ui_MainWindow):
             self.webView2.page().runJavaScript(js)
         except:
             QMessageBox.warning(self,'请选择csv文件','请选择csv文件后才能展示数据')
+    
+    def itemroall_cb(self):
+        spid = self.spinBox_2.value() #获得输入的包序号
+        if self.spinBox_2.value() > self.listWidget_2.count():
+            QMessageBox.warning(self,'输入数值错误','请输入小于分包数量的值')
+        else:
+            spid_mix = "分包:"+ str(spid)
+            print(spid_mix)
+            item = self.listWidget_2.findItems(spid_mix, QtCore.Qt.MatchRegExp)[0]
+            item.setSelected(True) #选中
+            self.listWidget_2.scrollToItem(item) #跳转到这里
             
+    def send_fenbao_cb(self):
+        a = self.listWidget_2.selectedItems()
+        for i in a:
+            print(i.text()) #结果是“分包:num”
+        b = self.listWidget_2.selectedIndexes()
+        for ii in b:
+            print(ii.row()) #结果是i也就是分包数据-1
+    
+    def proccessbar_display(self,value):
+        self.progressBar.setValue(value)
             
     def choosecsv(self):
         self.csv_name,ok = QFileDialog.getOpenFileName(self,"打开csv文件",'./data/datafile',"csv files(*.csv)")
@@ -1050,6 +1091,9 @@ class userMain(QMainWindow,Ui_MainWindow):
         buf_send = bytes.fromhex(send_end)
         self.sin_out1.emit(f'最后的指令的数据流为{buf_send}')
         self.com.send_order(buf_send)
+        
+        file_bin.close() #关闭文件
+        
         
         
 
@@ -1132,7 +1176,28 @@ class userMain(QMainWindow,Ui_MainWindow):
             '''
             data_dict["time"] = utils.get_current_hour()
             self.save_dict = data_dict
-
+    #接收函数3-广播消息传来
+    @QtCore.pyqtSlot(list)
+    def on_com_signalguangbo(self,guangbo_msg):
+        print("UI层输出数据为：",guangbo_msg)
+        #处理丢失帧号为十进制
+        Qe = QtGui.QFont()
+        Qe.setPointSize(12)
+        Qe.setBold(True)
+        self.label_15.setText(self.chonggou_step[guangbo_msg[0]])
+        self.label_15.setFont(Qe)
+        self.label_16.setText(self.wancheng_status[guangbo_msg[1]])
+        if guangbo_msg[1] == '00':
+            self.label_16.setStyleSheet("color:red")
+        else:
+            self.label_16.setStyleSheet("color:green")
+        self.label_16.setFont(Qe)
+        self.label_17.setText(str(int(guangbo_msg[2],16)))
+        self.label_17.setFont(Qe)
+        self.label_18.setText(self.cuowuma[guangbo_msg[3]])
+        self.label_18.setFont(Qe)
+        self.label_19.setText("正在运行")
+        self.label_19.setFont(Qe)
 
     #接收错误数据信号连接函数
     @QtCore.pyqtSlot(str)
@@ -1164,22 +1229,23 @@ class RunThread1(QtCore.QThread):
         
 class Send_bin_Thread(QtCore.QThread):
     sin_out = QtCore.pyqtSignal(str)
+    signal_proccessbar = QtCore.pyqtSignal(int)
     def __init__(self,parent):
         super().__init__()
         self.parent = parent
 
     def run(self):
-        self.sin_out.emit('开始......')
-        self.sin_out.emit('发送重构代码指令......')
-        self.sin_out.emit('读取指令模板......')
-        ZT1 = 'EB'
-        ZT2 = '90'
-        MLZ = '44'
-        #先发送重构bin文件指令，先获取bin文件字节长度
+        ZT1 = 'E1'
+        ZT2 = '16'
+        MLZ = '33'
+        #清空listWidget_2的item
+        self.sin_out.emit('清空所有包选项！')
+        self.parent.listWidget_2.clear()
+        
+        
         self.sin_out.emit('读取二进制bin文件......')
         file_bin = open(self.parent.bin_file_name,"rb") #二进制读取bin文件
 
-        self.sin_out.emit('正在获取二进制bin文件byte数据......')
         bin_data = file_bin.read() #把全部byte读出来
         self.sin_out.emit('二进制文件数据为：{}'.format(bin_data))
 
@@ -1187,53 +1253,74 @@ class Send_bin_Thread(QtCore.QThread):
         bin_length = len(bin_data)  #把字节长度读出来
         self.sin_out.emit(f'byte数据的长度为{bin_length}......')
 
-        #准备发送重构代码指令
-        bin_len_bao_num = bin_length//240 #bin_len_bao表示有多少个240字节的包
-        baonum = "".join("{:02X}".format(bin_len_bao_num))
+        #计算包的数量
+        bin_len_bao_num = bin_length//232 #bin_len_bao表示有多少个232字节的包
+        baonum = "".join("{:02X}".format(bin_len_bao_num)) #str
 
-        bin_len_shengxia = bin_length%240  #bin_len_shengxia表示除开240字节包后还剩多少字节
-        shengxiawei = "".join("{:02X}".format(bin_len_shengxia))
-
-        self.sin_out.emit('准备发送重构指令，240字节指令......')
-
-        send_order = ''.join([ZT1,ZT2,'02',MLZ,baonum,shengxiawei]) #这里02可能要改@@@@@
-        self.sin_out.emit('组合现在的指令为{}......'.format(send_order))
-
-        #生产校验位,并发送重构指令
-        checksum = 0
-        for i,j in zip(send_order[8::2],send_order[9::2]):
-            checksum += int('0x' + (i + j),16)
-        check_num = ('{:04x}'.format(checksum & 0xFFFF)).upper() #【更变！】~~~~~
-        send_code = send_order + ('00'*(238-len(send_order)//2)) +check_num
-
-        self.sin_out.emit('重构指令生成成功......发送完毕！')
-        buf = bytes.fromhex(send_code)
-        self.parent.com.send_order(buf)
-        self.sin_out.emit('发送完毕！，开始发送代码包')
-        time.sleep(5)
+        #计算最后一个包的字节数
+        bin_len_shengxia = bin_length % 232  #bin_len_shengxia表示除开232字节包后还剩多少字节
 
         #开始发送包
         #先将bin_data变成字符串480个字符（240字节）
         bin_data_str = "".join(["{:02X}".format(i) for i in bin_data])
-        self.sin_out.emit('需要发送的数据为：{}'.format(bin_data_str))
-        self.sin_out.emit('需要发送的数据长度位为：{}'.format(len(bin_data_str)))
+        self.sin_out.emit('需要发送的数据总长度为：{}'.format(len(bin_data_str)))
+        
         for i in range(bin_len_bao_num): #整包发一次
-            temp1 = bin_data_str[i*480:i*480+480]
-            buf1 = bytes.fromhex(temp1)
+            temp1 = bin_data_str[i*464:i*464+464] #拿出第一包出来
+            bao_xuhao = "{:04X}".format(i+1)
+            youxiao_lenth = '00EA' #固定234字节，是包序号+有效数据
+            #checksum计算
+            send_bao = "".join([ZT1,ZT2,youxiao_lenth,MLZ,bao_xuhao,temp1])
+            checksum_all = 0
+            for k,m in zip(send_bao[8::2],send_bao[9::2]):
+                checksum_all += int('0x' + (k + m),16)
+            checksum_fenbao = ('{:04x}'.format(checksum_all & 0xFFFF)).upper()
+            self.sin_out.emit(f'重构数据校验和为{checksum_fenbao}')
+            
+            send_bao1 = "".join([ZT1,ZT2,youxiao_lenth,MLZ,bao_xuhao,temp1,checksum_fenbao])
+            
+            buf1 = bytes.fromhex(send_bao1)
             self.parent.com.send_order(buf1)
             self.sin_out.emit('当前发送的包序号为：{}'.format(i+1))
-            time.sleep(1)
+            time.sleep(0.1)
+            
+            #for循环创建listWidget中的item
+            itemStr = "分包:" + str(i+1)
+            aItem = QListWidgetItem()
+            aItem.setText(itemStr)
+            self.parent.listWidget_2.addItem(aItem)
+            #给proccessbar传信号
+            self.signal_proccessbar.emit(int((i+1)/(bin_len_bao_num+1)*100))
+            
+            
+            
         #最后小包发一次
-        temp2 = bin_data_str[bin_len_bao_num*480:]
-        buf2 = bytes.fromhex(temp2)
+        temp2 = bin_data_str[bin_len_bao_num*464:]
+        youxiao_lenth_last = "{:02X}".format(bin_len_shengxia)
+        bao_xuhao_last = "{:04X}".format(bin_len_bao_num + 1)
+        #填充"00"
+        send_bao_last_temp = "".join([ZT1,ZT2,youxiao_lenth_last,MLZ,bao_xuhao_last,temp2,'00'*(232 - bin_len_shengxia)])
+        
+        checksum_last = 0
+        for l,n in zip(send_bao_last_temp[8::2],send_bao_last_temp[9::2]):
+            checksum_last += int('0x' + (l + n),16)
+        checksum_fenbao_last = ('{:04x}'.format(checksum_last & 0xFFFF)).upper()
+        self.sin_out.emit(f'重构数据校验和为{checksum_fenbao_last}')
+        
+        send_bao_last = "".join([ZT1,ZT2,youxiao_lenth_last,MLZ,bao_xuhao_last,temp2,'00'*(232 - bin_len_shengxia),checksum_fenbao_last])
+        
+        buf2 = bytes.fromhex(send_bao_last)
         self.parent.com.send_order(buf2)
-        self.sin_out.emit('当前发送的包序号为尾包')
-        time.sleep(1)
+        self.sin_out.emit('当前发送的包序号为尾包,包序号为{}'.format(bin_len_bao_num+1))
+        time.sleep(0.1)
         self.sin_out.emit('发送完毕')
         
-
-                
-
+        itemStr = "分包:" + str(bin_len_bao_num+1)
+        aItem = QListWidgetItem()
+        aItem.setText(itemStr)
+        self.parent.listWidget_2.addItem(aItem)
+        self.signal_proccessbar.emit(100)
+        
 
 
 if __name__ == "__main__":

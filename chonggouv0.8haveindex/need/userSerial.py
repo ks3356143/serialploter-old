@@ -43,6 +43,7 @@ if debug == True:
 STX1 = 0xE1 #不需要b
 STX2 = 0x16 #定义协议中帧头2字节
 XXL1 = 0x22 #类型编码
+XXLG = 0xFF #广播命令字
 
 class userSerial(QObject):
     """
@@ -64,6 +65,8 @@ class userSerial(QObject):
     signalRcvError = pyqtSignal(str)
     # 定义接收信号，信号带着data_dict给UI处理
     signalRcvdata = pyqtSignal(dict)
+    # 定义广播消息接收信号，信号带着list给UI处理
+    signalguangbo = pyqtSignal(list)
     #初始化串口
     def __init__(self, baudrate=115200, bytesize=EIGHTBITS, 
                     parity=PARITY_ODD, stopbits=STOPBITS_ONE, 
@@ -299,10 +302,6 @@ class userSerial(QObject):
                         logging.debug("接收16进制:{}B,数据为:{}".format(count, "".join(["{:02X}".format(i) for i in rcv])))
 
                     recv_data = self.jiequshuju()
-                    if recv_data:
-                        print('校验和OKOKOKOK')
-                    else:
-                        print('校验和错误！！！！！！！')
                     if recv_data != None:
                         data_dict = {} #定义一个dict来放入数据，@@@@@@@@@@注意看下这个是否ok，还是放前面去
                         print('最后截取到的数据为:',recv_data)
@@ -363,6 +362,18 @@ class userSerial(QObject):
                         return recv_msg
                     else:
                         return None
+                    
+                if bytebuf[3] == XXLG:
+                    print('这是广播消息！！！')
+                    length = bytebuf[2] #取出广播消息有效数据长度
+                    print("取出有效数据长度：",length) #广播消息固定为5
+                    recv_msg = bytebuf[4:length+4]
+                    print('广播消息的数据为',recv_msg,len(recv_msg))
+                    #检验校验和
+                    if (True == self.uart_jiaoyan(recv_msg,bytebuf[-2:],length)):
+                        self.guangbomsg(recv_msg)
+                    else:
+                        pass
 
     def uart_jiaoyan(self,recv_msg,hou2,length):
         check_sum = 0 #校验和
@@ -376,7 +387,35 @@ class userSerial(QObject):
             return True
         else:
             return False
-                    
+
+    #广播消息的处理函数
+    def guangbomsg(self,recv_data):
+        if recv_data:
+            print('广播消息校验和OKOKOKOK')
+        else:
+            print('广播消息校验和错误！！！！！！！')
+        if recv_data != None:
+            data_broadcast = [] #定义list放入数据,
+            print('最后广播消息数据为：',recv_data)
+            print('广播消息长度为',len(recv_data))
+            #转化为str用于解析
+            recv_data_str = "".join(["{:02X}".format(i) for i in recv_data]) 
+            print('转化为字符串后的获取的数据:',recv_data_str,'长度为:',len(recv_data_str))
+            #去掉前4个字节，也就是8个字符
+            # recv_data_str = recv_data_str[8:]
+            if len(recv_data_str) == 10:
+                data_broadcast.append(recv_data_str[:2])  #请求阶段0x44、0x33、0x55、0x66、
+                data_broadcast.append(recv_data_str[2:4]) #完成状态0或者1
+                data_broadcast.append(recv_data_str[4:8]) #丢失帧号
+                data_broadcast.append(recv_data_str[8:10]) #丢失帧号
+            print("底层截取到的广播数组为:",data_broadcast)
+            #发送数组数据
+            self.signalguangbo.emit(data_broadcast)
+            #发送收到数据量
+            self.signalRcv.emit(len(recv_data))
+            
+            
+          
                     
             
         
