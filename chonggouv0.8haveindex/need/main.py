@@ -1322,7 +1322,7 @@ class Send_bin_Thread(QtCore.QThread):
         self.signal_proccessbar.emit(100)
         
 
-
+'''测试代码
 if __name__ == "__main__":
     QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     app = QApplication(sys.argv)
@@ -1334,3 +1334,4 @@ if __name__ == "__main__":
     # win.show()
 
     sys.exit(app.exec_())
+'''
