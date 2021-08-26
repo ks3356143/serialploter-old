@@ -1184,20 +1184,23 @@ class userMain(QMainWindow,Ui_MainWindow):
         Qe = QtGui.QFont()
         Qe.setPointSize(12)
         Qe.setBold(True)
-        self.label_15.setText(self.chonggou_step[guangbo_msg[0]])
-        self.label_15.setFont(Qe)
-        self.label_16.setText(self.wancheng_status[guangbo_msg[1]])
-        if guangbo_msg[1] == '00':
-            self.label_16.setStyleSheet("color:red")
-        else:
-            self.label_16.setStyleSheet("color:green")
-        self.label_16.setFont(Qe)
-        self.label_17.setText(str(int(guangbo_msg[2],16)))
-        self.label_17.setFont(Qe)
-        self.label_18.setText(self.cuowuma[guangbo_msg[3]])
-        self.label_18.setFont(Qe)
-        self.label_19.setText("正在运行")
-        self.label_19.setFont(Qe)
+        try:
+            self.label_15.setText(self.chonggou_step[guangbo_msg[0]])
+            self.label_15.setFont(Qe)
+            self.label_16.setText(self.wancheng_status[guangbo_msg[1]])
+            if guangbo_msg[1] == '00':
+                self.label_16.setStyleSheet("color:red")
+            else:
+                self.label_16.setStyleSheet("color:green")
+            self.label_16.setFont(Qe)
+            self.label_17.setText(str(int(guangbo_msg[2],16)))
+            self.label_17.setFont(Qe)
+            self.label_18.setText(self.cuowuma[guangbo_msg[3]])
+            self.label_18.setFont(Qe)
+            self.label_19.setText("正在运行")
+            self.label_19.setFont(Qe)
+        except:
+            pass
 
     #接收错误数据信号连接函数
     @QtCore.pyqtSlot(str)
