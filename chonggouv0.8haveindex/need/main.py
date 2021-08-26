@@ -17,17 +17,15 @@ if debug==True:
 import time
 from time import sleep
 import os
-import sys
 import re
 import codecs
 import threading
-import binascii
 
 from PyQt5 import QtCore
 from PyQt5.QtGui import QFont, QIntValidator
 from PyQt5.QtCore import QTranslator, Qt, pyqtSignal
-from PyQt5.QtWidgets import QDialog,QMainWindow,QMessageBox,QComboBox,QLabel,QActionGroup,QAbstractItemView,QAbstractScrollArea
-from PyQt5.QtWidgets import QFileDialog,QListWidgetItem,QHeaderView,QTableWidgetItem,QScrollArea,QVBoxLayout
+from PyQt5.QtWidgets import QDialog, QInputDialog,QMainWindow,QMessageBox,QComboBox,QLabel,QActionGroup,QAbstractItemView
+from PyQt5.QtWidgets import QFileDialog,QListWidgetItem,QHeaderView,QTableWidgetItem
 from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets
 from PyQt5.QtWebEngineWidgets import QWebEngineSettings
 
@@ -91,8 +89,6 @@ class userMain(QMainWindow,Ui_MainWindow):
         self.setupUi(self)
         if debug == True:
             logging.debug("初始化主程序:")
-
-
 
         # 实例化翻译家
         self.trans = QTranslator()
@@ -235,6 +231,8 @@ class userMain(QMainWindow,Ui_MainWindow):
         self.listWidget_2.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.pushButton_7.clicked.connect(self.itemroall_cb)
         self.pushButton_4.clicked.connect(self.send_fenbao_cb)
+        self.pushButton_5.clicked.connect(self.send_shaoxie_cb)
+        self.pushButton_6.clicked.connect(self.chongqi_cb)
         
         
         self.chonggou_step = {'44':'第一阶段',"33":"第二阶段","55":"第三阶段","66":"第四阶段"}
@@ -1014,12 +1012,142 @@ class userMain(QMainWindow,Ui_MainWindow):
             self.listWidget_2.scrollToItem(item) #跳转到这里
             
     def send_fenbao_cb(self):
+        ZT1 = 'E1'
+        ZT2 = '16'
+        MLZ = '33'
         a = self.listWidget_2.selectedItems()
         for i in a:
-            print(i.text()) #结果是“分包:num”
+            print("您发送的分包为",i.text()) #结果是“分包:num”,列表形式储存
         b = self.listWidget_2.selectedIndexes()
         for ii in b:
-            print(ii.row()) #结果是i也就是分包数据-1
+            print("您发送的分包序号为(需要加1位显示序号)",ii.row()) #结果是i也就是分包数据-1,列表形式储存
+        
+        if b:
+            print('存在选择分包')
+            strinfo = ','.join([item.text() for item in a]) #弹出对话框展示选择的包
+            defaultBtn = QMessageBox.NoButton #默认按钮
+            result = QMessageBox.question(self,"确认发送？",strinfo,QMessageBox.Yes | QMessageBox.Cancel, defaultBtn)
+            
+            if (result == QMessageBox.Yes):
+                if self.bin_file_name:
+                    file_bin = open(self.bin_file_name,"rb") #二进制读取bin文件
+                    bin_data = file_bin.read()
+                    bin_length = len(bin_data)
+                    bin_len_bao_num = bin_length//232
+                    bin_len_shengxia = bin_length % 232
+                    bin_data_str = "".join(["{:02X}".format(i) for i in bin_data])
+                    #开始发送包
+                    for fenbao_i in b:
+                        print(fenbao_i.row())
+                        i = fenbao_i.row()
+                        if i != bin_len_bao_num:
+                            temp1 = bin_data_str[i*464:i*464+464] #拿出第一包出来
+                            bao_xuhao = "{:04X}".format(i)
+                            youxiao_lenth = '00EA' #固定234字节，是包序号+有效数据
+                            #checksum计算
+                            send_bao = "".join([ZT1,ZT2,youxiao_lenth,MLZ,bao_xuhao,temp1])
+                            checksum_all = 0
+                            for k,m in zip(send_bao[8::2],send_bao[9::2]):
+                                checksum_all += int('0x' + (k + m),16)
+                            checksum_fenbao = ('{:04x}'.format(checksum_all & 0xFFFF)).upper()
+                            
+                            send_bao1 = "".join([ZT1,ZT2,youxiao_lenth,MLZ,bao_xuhao,temp1,checksum_fenbao])
+                            
+                            buf1 = bytes.fromhex(send_bao1)
+                            self.com.send_order(buf1)
+                            print('当前发送的包序号为：{},已发送完成'.format(i+1))
+                            time.sleep(0.1)
+                        elif i == bin_len_bao_num:
+                            temp2 = bin_data_str[bin_len_bao_num*464:]
+                            youxiao_lenth_last = "{:02X}".format(bin_len_shengxia)
+                            bao_xuhao_last = "{:04X}".format(bin_len_bao_num + 1)
+                            #填充"00"
+                            send_bao_last_temp = "".join([ZT1,ZT2,youxiao_lenth_last,MLZ,bao_xuhao_last,temp2,'00'*(232 - bin_len_shengxia)])
+                            
+                            checksum_last = 0
+                            for l,n in zip(send_bao_last_temp[8::2],send_bao_last_temp[9::2]):
+                                checksum_last += int('0x' + (l + n),16)
+                            checksum_fenbao_last = ('{:04x}'.format(checksum_last & 0xFFFF)).upper()
+                            
+                            send_bao_last = "".join([ZT1,ZT2,youxiao_lenth_last,MLZ,bao_xuhao_last,temp2,'00'*(232 - bin_len_shengxia),checksum_fenbao_last])
+                            
+                            buf2 = bytes.fromhex(send_bao_last)
+                            self.com.send_order(buf2)
+                            print('当前发送的包序号为尾包,包序号为{}'.format(bin_len_bao_num+1))
+                            time.sleep(0.1)
+
+                    QMessageBox.warning(self,"发送提示","发送完毕！") 
+                    file_bin.close()     
+                else:
+                    QMessageBox.warning(self,"未选择文件","请先选择文件再发送分包")
+            elif (result == QMessageBox.Cancel):
+                pass
+        else:
+            QMessageBox.warning(self,"未选择分包","请先选择分包")
+            
+    def send_shaoxie_cb(self):
+        print("发送烧写Flash指令")
+        ZTX1 = 'E1'
+        ZTX2 = '16'
+        able_lenth = '02'
+        MLZ = '55'
+        operate_code = 'AA'
+        fill_zero = '00' * 232
+
+        #判断用户选择模式
+        dilTitle = "请选择主备"
+        txtLabel = "请选择主/备份烧写模式"
+        curIndex = 0
+        editable = False
+        items = ['主份烧写',"备份烧写"]
+        text,OK = QInputDialog.getItem(self,dilTitle,txtLabel,items,curIndex,editable)
+        if OK:
+            if text == "主份烧写":
+                cache = 1
+            elif text == "备份烧写":
+                cache = 2
+            master_code = '01' if cache == 1 else '02' if cache==2 else print("用户啥都没选择") 
+            checksum_shaoxie = '00AB' if cache == 1 else '00AC' if cache==2 else print("用户啥都没选择") 
+            send_code_shaoxie = ''.join([ZTX1,ZTX2,able_lenth,MLZ,master_code,operate_code,fill_zero,checksum_shaoxie])
+            print("烧写指令为：",send_code_shaoxie)
+            if self.com.getPortState():
+                buf_send = bytes.fromhex(send_code_shaoxie)
+                self.com.send_order(buf_send)
+                print("烧写指令发送完成")
+            else:
+                QMessageBox.warning(self,"串口未打开","请打开串口后执行")
+        
+    def chongqi_cb(self):
+        print("发送重启指令")
+        ZTX1 = 'E1'
+        ZTX2 = '16'
+        able_lenth = '02'
+        MLZ = '66'
+        operate_code = 'AA'
+        fill_zero = '00' * 232
+
+        #判断用户选择模式
+        dilTitle = "请选择主备重启"
+        txtLabel = "请选择主/备份重启"
+        curIndex = 0
+        editable = False
+        items = ['主份重启',"备份重启"]
+        text,OK = QInputDialog.getItem(self,dilTitle,txtLabel,items,curIndex,editable)
+        if OK:
+            if text == "主份重启":
+                cache = 1
+            elif text == "备份重启":
+                cache = 2
+            master_code = '01' if cache == 1 else '02' if cache==2 else print("用户啥都没选择") 
+            checksum_shaoxie = '00AB' if cache == 1 else '00AC' if cache==2 else print("用户啥都没选择") 
+            send_code_shaoxie = ''.join([ZTX1,ZTX2,able_lenth,MLZ,master_code,operate_code,fill_zero,checksum_shaoxie])
+            print("重启指令为：",send_code_shaoxie)
+            if self.com.getPortState():
+                buf_send = bytes.fromhex(send_code_shaoxie)
+                self.com.send_order(buf_send)
+                print("重启指令发送完成")
+            else:
+                QMessageBox.warning(self,"串口未打开","请打开串口后执行")
     
     def proccessbar_display(self,value):
         self.progressBar.setValue(value)
@@ -1070,7 +1198,7 @@ class userMain(QMainWindow,Ui_MainWindow):
         checksum = 0
         for i,j in zip(chonggou_str[8::2],chonggou_str[9::2]):
             checksum += int('0x' + (i + j),16)
-        checksum_chonggou = ('{:04x}'.format(checksum & 0xFFFF)).upper()
+        checksum_chonggou = ('{:08x}'.format(checksum & 0xFFFF)).upper()
         self.sin_out1.emit(f'重构数据校验和为{checksum_chonggou}')
         
         #组装send_order2
@@ -1270,7 +1398,7 @@ class Send_bin_Thread(QtCore.QThread):
         
         for i in range(bin_len_bao_num): #整包发一次
             temp1 = bin_data_str[i*464:i*464+464] #拿出第一包出来
-            bao_xuhao = "{:04X}".format(i+1)
+            bao_xuhao = "{:04X}".format(i)
             youxiao_lenth = '00EA' #固定234字节，是包序号+有效数据
             #checksum计算
             send_bao = "".join([ZT1,ZT2,youxiao_lenth,MLZ,bao_xuhao,temp1])
@@ -1323,6 +1451,8 @@ class Send_bin_Thread(QtCore.QThread):
         aItem.setText(itemStr)
         self.parent.listWidget_2.addItem(aItem)
         self.signal_proccessbar.emit(100)
+        
+        file_bin.close() #关闭文件
         
 
 '''测试代码
