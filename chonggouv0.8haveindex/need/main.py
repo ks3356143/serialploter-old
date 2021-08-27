@@ -179,7 +179,7 @@ class userMain(QMainWindow,Ui_MainWindow):
         if debug == True:
             logging.debug("当前系统可用端口:{}".format(self.comPortList))
             
-        #~~~~~~~~~~~变量参数初始化~~~~~~~~
+        #~~~~~~~~~~~变量参数初始化~~~~~~~~~~~~~~
         self.user_para_addr = [] #初始化用户选择的数据变量地址信息'0c67AE6A'4字节列表
         self.user_para_dict = {} #初始化用户选择的数据变量地址信息以及其变量名
         self.user_send_length = 0 #用户选择的参数数量
@@ -1189,7 +1189,7 @@ class userMain(QMainWindow,Ui_MainWindow):
             shengxiawei = "".join("{:02X}".format(bin_len_shengxia))
 
             self.sin_out1.emit('计算有效长度.....')
-            youxiaolenth = '08'
+            youxiaolenth = '0A'
             self.sin_out1.emit(f'有效长度{youxiaolenth}')
 
             send_order1 = ''.join([ZT1,ZT2,youxiaolenth,MLZ,baonum,bin_res_length]) #这里02可能要改@@@@@
@@ -1200,9 +1200,9 @@ class userMain(QMainWindow,Ui_MainWindow):
             #self.sin_out1.emit(f'重构数据字符串为{chonggou_str}')
             
             checksum = 0
-            for i,j in zip(chonggou_str[8::2],chonggou_str[9::2]):
+            for i,j in zip(chonggou_str[0::2],chonggou_str[1::2]):
                 checksum += int('0x' + (i + j),16)
-            checksum_chonggou = ('{:08x}'.format(checksum & 0xFFFF)).upper()
+            checksum_chonggou = ('{:08x}'.format(checksum & 0xFFFFFFFF)).upper()
             self.sin_out1.emit(f'重构数据校验和为{checksum_chonggou}')
             
             #组装send_order2
@@ -1217,7 +1217,7 @@ class userMain(QMainWindow,Ui_MainWindow):
             self.sin_out1.emit(f'校验和为{checksum_end}')
             
             #组装最后指令
-            send_end = send_order2 + ('00' * 225) + checksum_end
+            send_end = send_order2 + ('00' * 224) + checksum_end
             self.sin_out1.emit(f'最后的指令为{send_end}')
             
             buf_send = bytes.fromhex(send_end)
@@ -1419,7 +1419,7 @@ class Send_bin_Thread(QtCore.QThread):
             buf1 = bytes.fromhex(send_bao1)
             self.parent.com.send_order(buf1)
             self.sin_out.emit('当前发送的包序号为：{}'.format(i+1))
-            time.sleep(0.1)
+            time.sleep(1)
             
             #for循环创建listWidget中的item
             itemStr = "分包:" + str(i+1)
@@ -1433,7 +1433,7 @@ class Send_bin_Thread(QtCore.QThread):
             
         #最后小包发一次
         temp2 = bin_data_str[bin_len_bao_num*464:]
-        youxiao_lenth_last = "{:02X}".format(bin_len_shengxia)
+        youxiao_lenth_last = "{:02X}".format(bin_len_shengxia+2)
         bao_xuhao_last = "{:04X}".format(bin_len_bao_num + 1)
         #填充"00"
         send_bao_last_temp = "".join([ZT1,ZT2,youxiao_lenth_last,MLZ,bao_xuhao_last,temp2,'00'*(232 - bin_len_shengxia)])
@@ -1445,11 +1445,12 @@ class Send_bin_Thread(QtCore.QThread):
         self.sin_out.emit(f'重构数据校验和为{checksum_fenbao_last}')
         
         send_bao_last = "".join([ZT1,ZT2,youxiao_lenth_last,MLZ,bao_xuhao_last,temp2,'00'*(232 - bin_len_shengxia),checksum_fenbao_last])
-        
+        self.sin_out.emit(f'最后一个包发送的指令为{send_bao_last}')
+
         buf2 = bytes.fromhex(send_bao_last)
         self.parent.com.send_order(buf2)
         self.sin_out.emit('当前发送的包序号为尾包,包序号为{}'.format(bin_len_bao_num+1))
-        time.sleep(0.1)
+        time.sleep(1)
         self.sin_out.emit('发送完毕')
         
         itemStr = "分包:" + str(bin_len_bao_num+1)

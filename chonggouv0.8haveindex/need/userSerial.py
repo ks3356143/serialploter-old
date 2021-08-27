@@ -261,7 +261,7 @@ class userSerial(QObject):
             buf = self.RcvBuff[:count]
             print('!!!!!!!!!!!!!!目前缓存是!!!!!',len(self.RcvBuff))
             self.RcvBuff = self.RcvBuff[count:]
-            self.RcvBuff.clear() #添加删除缓存操作
+            #self.RcvBuff.clear() #添加删除缓存操作
             self.RcvBuffLock.release()
             print('!!!!!!!!!!!!!!目前取后缓存是!!!!!!',len(self.RcvBuff))
         elif len(self.RcvBuff):
