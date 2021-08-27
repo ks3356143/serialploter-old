@@ -17,6 +17,7 @@ if debug==True:
 import time
 from time import sleep
 import os
+import sys
 from os import path
 import re
 import codecs
@@ -188,7 +189,7 @@ class userMain(QMainWindow,Ui_MainWindow):
         #~~~~~~~~~~~加载用户变量表格~~~~~~~~~~~~~
         if debug==True:
             logging.debug("开始导入变量中文名、变量类型参数......")
-        self.df = pd.read_csv(path.dirname(path.dirname(path.abspath(__file__)))+'/varstatic.csv',encoding='gbk')
+        self.df = pd.read_csv(path.dirname(path.dirname(sys.argv[0]))+'varstatic.csv',encoding='gbk')
 
         if debug==True:
             print('导入的变量表格为：\r',self.df)
@@ -252,7 +253,7 @@ class userMain(QMainWindow,Ui_MainWindow):
         webSettings.setAttribute(QWebEngineSettings.JavascriptCanOpenWindows,True)
         
         self.webView2 = QtWebEngineWidgets.QWebEngineView()
-        self.webView2.load(QtCore.QUrl(QtCore.QFileInfo(path.dirname(path.dirname(path.abspath(__file__)))+"/showdatas.html").absoluteFilePath()))
+        self.webView2.load(QtCore.QUrl(QtCore.QFileInfo(path.dirname(path.dirname(sys.argv[0]))+"showdatas.html").absoluteFilePath()))
         self.hLayout_2.addWidget(self.webView2)
 
 #     更新系统支持的串口设备并更新端口组合框内容
@@ -792,7 +793,7 @@ class userMain(QMainWindow,Ui_MainWindow):
     def map_create_cb(self):   #呈现到leftwidget
         if self.mapDict !={}:
             my_dict = self.mapDict
-            with open(path.dirname(path.dirname(path.abspath(__file__))) + '/userchoose.csv','w',newline="") as f:
+            with open(path.dirname(path.dirname(sys.argv[0])) + 'userchoose.csv','w',newline="") as f:
                 writer1 = csv.writer(f)
                 a = 'address'
                 b = 'name'
@@ -829,12 +830,12 @@ class userMain(QMainWindow,Ui_MainWindow):
 
     def save_file_thread(self):
         if self.com.getPortState():
-            if not os.path.exists(path.dirname(path.dirname(path.abspath(__file__)))+'/data'):
-                os.mkdir(path.dirname(path.dirname(path.abspath(__file__)))+'/data')
-            if not os.path.exists(path.dirname(path.dirname(path.abspath(__file__)))+'/data/datafile'):
-                os.mkdir(path.dirname(path.dirname(path.abspath(__file__)))+'/data/datafile')
+            if not os.path.exists(path.dirname(path.dirname(sys.argv[0]))+'data'):
+                os.mkdir(path.dirname(path.dirname(sys.argv[0]))+'data')
+            if not os.path.exists(path.dirname(path.dirname(sys.argv[0]))+'data/datafile'):
+                os.mkdir(path.dirname(path.dirname(sys.argv[0]))+'data/datafile')
             try:
-                self.file_name1 = "/data/datafile/" + utils.get_current_date() + ".csv"
+                self.file_name1 = "data/datafile" + utils.get_current_date() + ".csv"
                 # self.csv_file_1 = open(file_name1,'a+',newline='')
                 # self.writer_1 = csv.writer(self.csv_file_1)
                 # 改为dataframe储存
@@ -848,7 +849,7 @@ class userMain(QMainWindow,Ui_MainWindow):
     
     def save_file_cancel(self):
         try:
-            save_path = path.dirname(path.dirname(path.abspath(__file__))) + self.file_name1
+            save_path = path.dirname(path.dirname(sys.argv[0])) + self.file_name1
             self.save_df.to_csv(save_path,index=False,mode='a')
             self.save_df = pd.DataFrame()
             QMessageBox.critical(self,'保存文件成功','保存文件成功，清空DataFrame成功！')

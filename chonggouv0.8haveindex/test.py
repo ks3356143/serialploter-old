@@ -1,2 +1,4 @@
-from os import path
-print(path.dirname(path.dirname(path.abspath(__file__))))
+import os
+import sys
+pa = os.path.dirname(os.path.dirname(sys.argv[0]))
+print(pa)
