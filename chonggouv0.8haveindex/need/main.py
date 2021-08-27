@@ -189,7 +189,7 @@ class userMain(QMainWindow,Ui_MainWindow):
         #~~~~~~~~~~~加载用户变量表格~~~~~~~~~~~~~
         if debug==True:
             logging.debug("开始导入变量中文名、变量类型参数......")
-        self.df = pd.read_csv(path.dirname(path.dirname(sys.argv[0]))+'varstatic.csv',encoding='gbk')
+        self.df = pd.read_csv(path.dirname(sys.argv[0])+'varstatic.csv',encoding='gbk')
 
         if debug==True:
             print('导入的变量表格为：\r',self.df)
@@ -253,7 +253,7 @@ class userMain(QMainWindow,Ui_MainWindow):
         webSettings.setAttribute(QWebEngineSettings.JavascriptCanOpenWindows,True)
         
         self.webView2 = QtWebEngineWidgets.QWebEngineView()
-        self.webView2.load(QtCore.QUrl(QtCore.QFileInfo(path.dirname(path.dirname(sys.argv[0]))+"showdatas.html").absoluteFilePath()))
+        self.webView2.load(QtCore.QUrl(QtCore.QFileInfo(path.dirname(sys.argv[0])+"showdatas.html").absoluteFilePath()))
         self.hLayout_2.addWidget(self.webView2)
 
 #     更新系统支持的串口设备并更新端口组合框内容
@@ -793,7 +793,7 @@ class userMain(QMainWindow,Ui_MainWindow):
     def map_create_cb(self):   #呈现到leftwidget
         if self.mapDict !={}:
             my_dict = self.mapDict
-            with open(path.dirname(path.dirname(sys.argv[0])) + 'userchoose.csv','w',newline="") as f:
+            with open(path.dirname(sys.argv[0]) + 'userchoose.csv','w',newline="") as f:
                 writer1 = csv.writer(f)
                 a = 'address'
                 b = 'name'
@@ -830,10 +830,10 @@ class userMain(QMainWindow,Ui_MainWindow):
 
     def save_file_thread(self):
         if self.com.getPortState():
-            if not os.path.exists(path.dirname(path.dirname(sys.argv[0]))+'data'):
-                os.mkdir(path.dirname(path.dirname(sys.argv[0]))+'data')
-            if not os.path.exists(path.dirname(path.dirname(sys.argv[0]))+'data/datafile'):
-                os.mkdir(path.dirname(path.dirname(sys.argv[0]))+'data/datafile')
+            if not os.path.exists(path.dirname(sys.argv[0])+'data'):
+                os.mkdir(path.dirname(sys.argv[0])+'data')
+            if not os.path.exists(path.dirname(sys.argv[0])+'data/datafile'):
+                os.mkdir(path.dirname(sys.argv[0])+'data/datafile')
             try:
                 self.file_name1 = "data/datafile" + utils.get_current_date() + ".csv"
                 # self.csv_file_1 = open(file_name1,'a+',newline='')
@@ -849,7 +849,7 @@ class userMain(QMainWindow,Ui_MainWindow):
     
     def save_file_cancel(self):
         try:
-            save_path = path.dirname(path.dirname(sys.argv[0])) + self.file_name1
+            save_path = path.dirname(sys.argv[0]) + self.file_name1
             self.save_df.to_csv(save_path,index=False,mode='a')
             self.save_df = pd.DataFrame()
             QMessageBox.critical(self,'保存文件成功','保存文件成功，清空DataFrame成功！')
@@ -1189,7 +1189,7 @@ class userMain(QMainWindow,Ui_MainWindow):
             shengxiawei = "".join("{:02X}".format(bin_len_shengxia))
 
             self.sin_out1.emit('计算有效长度.....')
-            youxiaolenth = '08'
+            youxiaolenth = '0A'
             self.sin_out1.emit(f'有效长度{youxiaolenth}')
 
             send_order1 = ''.join([ZT1,ZT2,youxiaolenth,MLZ,baonum,bin_res_length]) #这里02可能要改@@@@@
@@ -1202,7 +1202,7 @@ class userMain(QMainWindow,Ui_MainWindow):
             checksum = 0
             for i,j in zip(chonggou_str[8::2],chonggou_str[9::2]):
                 checksum += int('0x' + (i + j),16)
-            checksum_chonggou = ('{:08x}'.format(checksum & 0xFFFF)).upper()
+            checksum_chonggou = ('{:08x}'.format(checksum & 0xFFFFFFFF)).upper()
             self.sin_out1.emit(f'重构数据校验和为{checksum_chonggou}')
             
             #组装send_order2
@@ -1217,7 +1217,7 @@ class userMain(QMainWindow,Ui_MainWindow):
             self.sin_out1.emit(f'校验和为{checksum_end}')
             
             #组装最后指令
-            send_end = send_order2 + ('00' * 225) + checksum_end
+            send_end = send_order2 + ('00' * 224) + checksum_end
             self.sin_out1.emit(f'最后的指令为{send_end}')
             
             buf_send = bytes.fromhex(send_end)
