@@ -179,7 +179,7 @@ class userMain(QMainWindow,Ui_MainWindow):
         if debug == True:
             logging.debug("当前系统可用端口:{}".format(self.comPortList))
             
-        #~~~~~~~~~~~变量参数初始化~~~~~~~~
+        #~~~~~~~~~~~变量参数初始化~~~~~~~~~~~~~~
         self.user_para_addr = [] #初始化用户选择的数据变量地址信息'0c67AE6A'4字节列表
         self.user_para_dict = {} #初始化用户选择的数据变量地址信息以及其变量名
         self.user_send_length = 0 #用户选择的参数数量
@@ -1200,7 +1200,7 @@ class userMain(QMainWindow,Ui_MainWindow):
             #self.sin_out1.emit(f'重构数据字符串为{chonggou_str}')
             
             checksum = 0
-            for i,j in zip(chonggou_str[8::2],chonggou_str[9::2]):
+            for i,j in zip(chonggou_str[0::2],chonggou_str[1::2]):
                 checksum += int('0x' + (i + j),16)
             checksum_chonggou = ('{:08x}'.format(checksum & 0xFFFFFFFF)).upper()
             self.sin_out1.emit(f'重构数据校验和为{checksum_chonggou}')
@@ -1419,7 +1419,7 @@ class Send_bin_Thread(QtCore.QThread):
             buf1 = bytes.fromhex(send_bao1)
             self.parent.com.send_order(buf1)
             self.sin_out.emit('当前发送的包序号为：{}'.format(i+1))
-            time.sleep(0.1)
+            time.sleep(1)
             
             #for循环创建listWidget中的item
             itemStr = "分包:" + str(i+1)
@@ -1434,7 +1434,11 @@ class Send_bin_Thread(QtCore.QThread):
         #最后小包发一次
         print('包的lenth为',bin_len_bao_num)
         temp2 = bin_data_str[bin_len_bao_num*464:]
+<<<<<<< HEAD
         youxiao_lenth_last = "{:02X}".format(bin_len_shengxia + 2)
+=======
+        youxiao_lenth_last = "{:02X}".format(bin_len_shengxia + 2)
+>>>>>>> 2ad6349242d04588044300ed577ea71efb7345e0
         bao_xuhao_last = "{:04X}".format(bin_len_bao_num + 1)
         #填充"00"
         print('尾包长度',bin_len_shengxia)
@@ -1447,12 +1451,17 @@ class Send_bin_Thread(QtCore.QThread):
         self.sin_out.emit(f'重构数据校验和为:{checksum_fenbao_last}')
         
         send_bao_last = "".join([ZT1,ZT2,youxiao_lenth_last,MLZ,bao_xuhao_last,temp2,'00'*(232 - bin_len_shengxia),checksum_fenbao_last])
+<<<<<<< HEAD
         self.sin_out.emit('发送尾包指令为{}'.format(send_bao_last))
         
+=======
+        self.sin_out.emit(f'最后一个包发送的指令为{send_bao_last}')
+
+>>>>>>> 2ad6349242d04588044300ed577ea71efb7345e0
         buf2 = bytes.fromhex(send_bao_last)
         self.parent.com.send_order(buf2)
         self.sin_out.emit('当前发送的包序号为尾包,包序号为{}'.format(bin_len_bao_num+1))
-        time.sleep(0.1)
+        time.sleep(1)
         self.sin_out.emit('发送完毕')
         
         itemStr = "分包:" + str(bin_len_bao_num+1)
