@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
-from PyQt5 import QtWidgets
+from PyQt5 import QtCore,QtWidgets,QtWebEngineWidgets
 from PyQt5.QtWidgets import QMessageBox
 import need.echarts
-from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets
 from PyQt5.QtWebEngineWidgets import QWebEngineSettings
-import sys
-import numpy as np
 import json
 import pandas as pd
+from os import path
 
 
 class Mywin(QtWidgets.QWidget,need.echarts.Ui_Form):
@@ -20,7 +18,7 @@ class Mywin(QtWidgets.QWidget,need.echarts.Ui_Form):
         self.setWindowTitle('测试平台遥测工具-子窗口')
         self.huitu = 1
         #获取主界面的变量表格(注意这里的self.df和以前不一样)
-        self.df = pd.read_csv('./varstatic.csv',encoding='gbk')
+        self.df = pd.read_csv(path.dirname(path.abspath(__file__))+'/varstatic.csv',encoding='gbk')
 
     def initUI(self):
         webSettings = QWebEngineSettings.globalSettings()
@@ -29,7 +27,7 @@ class Mywin(QtWidgets.QWidget,need.echarts.Ui_Form):
         webSettings.setAttribute(QWebEngineSettings.JavascriptCanOpenWindows,True)
         
         self.webView = QtWebEngineWidgets.QWebEngineView()
-        self.webView.load(QtCore.QUrl(QtCore.QFileInfo("./ks001let.html").absoluteFilePath()))
+        self.webView.load(QtCore.QUrl(QtCore.QFileInfo(path.dirname(path.abspath(__file__)) + "/ks001let.html").absoluteFilePath()))
         self.hLayout.addWidget(self.webView)
         
         self.timer = QtCore.QTimer()

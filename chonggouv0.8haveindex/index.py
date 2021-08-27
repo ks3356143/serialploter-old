@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from queue import Queue
-from need.mainks import Mywin
+from PyQt5 import *
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QApplication
 import sys
@@ -8,8 +7,9 @@ from need.main import userMain
 import qtmodern.styles
 import qtmodern.windows
 
+
 if __name__ == "__main__":
-    QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
+    #QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     app = QApplication(sys.argv)
     win = userMain()
 

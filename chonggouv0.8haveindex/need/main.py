@@ -17,16 +17,17 @@ if debug==True:
 import time
 from time import sleep
 import os
+from os import path
 import re
 import codecs
 import threading
 
-from PyQt5 import QtCore
-from PyQt5.QtGui import QFont, QIntValidator
-from PyQt5.QtCore import QTranslator, Qt, pyqtSignal
-from PyQt5.QtWidgets import QDialog, QInputDialog,QMainWindow,QMessageBox,QComboBox,QLabel,QActionGroup,QAbstractItemView
+from PyQt5 import QtCore,QtGui
+from PyQt5 import QtWebEngineWidgets
+from PyQt5.QtGui import QIntValidator
+from PyQt5.QtCore import QTranslator
+from PyQt5.QtWidgets import QInputDialog,QMainWindow,QMessageBox,QLabel,QAbstractItemView
 from PyQt5.QtWidgets import QFileDialog,QListWidgetItem,QHeaderView,QTableWidgetItem
-from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets
 from PyQt5.QtWebEngineWidgets import QWebEngineSettings
 
 from need.chuankou import Ui_MainWindow
@@ -35,7 +36,6 @@ from need.userSerial import userSerial,suportBandRateList
 
 from need import utils
 import csv
-import json
 #加载dataFrame表格
 import pandas as pd
 #加入mainks.py
@@ -187,7 +187,7 @@ class userMain(QMainWindow,Ui_MainWindow):
         #~~~~~~~~~~~加载用户变量表格~~~~~~~~~~~~~
         if debug==True:
             logging.debug("开始导入变量中文名、变量类型参数......")
-        self.df = pd.read_csv(os.path.abspath('varstatic.csv'),encoding='gbk')
+        self.df = pd.read_csv(path.dirname(path.abspath(__file__))+'/varstatic.csv',encoding='gbk')
 
         if debug==True:
             print('导入的变量表格为：\r',self.df)
@@ -251,7 +251,7 @@ class userMain(QMainWindow,Ui_MainWindow):
         webSettings.setAttribute(QWebEngineSettings.JavascriptCanOpenWindows,True)
         
         self.webView2 = QtWebEngineWidgets.QWebEngineView()
-        self.webView2.load(QtCore.QUrl(QtCore.QFileInfo("./showdatas.html").absoluteFilePath()))
+        self.webView2.load(QtCore.QUrl(QtCore.QFileInfo(path.dirname(path.abspath(__file__))+"/showdatas.html").absoluteFilePath()))
         self.hLayout_2.addWidget(self.webView2)
 
 #     更新系统支持的串口设备并更新端口组合框内容
@@ -791,7 +791,7 @@ class userMain(QMainWindow,Ui_MainWindow):
     def map_create_cb(self):   #呈现到leftwidget
         if self.mapDict !={}:
             my_dict = self.mapDict
-            with open(os.path.abspath('userchoose.csv'),'w',newline="") as f:
+            with open(path.dirname(path.abspath(__file__)) + '/userchoose.csv','w',newline="") as f:
                 writer1 = csv.writer(f)
                 a = 'address'
                 b = 'name'
@@ -828,12 +828,12 @@ class userMain(QMainWindow,Ui_MainWindow):
 
     def save_file_thread(self):
         if self.com.getPortState():
-            if not os.path.exists('./data'):
-                os.mkdir('./data')
-            if not os.path.exists('./data/datafile'):
-                os.mkdir('./data/datafile')
+            if not os.path.exists(path.dirname(path.abspath(__file__))+'/data'):
+                os.mkdir(path.dirname(path.abspath(__file__))+'/data')
+            if not os.path.exists(path.dirname(path.abspath(__file__))+'/data/datafile'):
+                os.mkdir(path.dirname(path.abspath(__file__))+'/data/datafile')
             try:
-                self.file_name1 = "data/datafile/" + utils.get_current_date() + ".csv"
+                self.file_name1 = "/data/datafile/" + utils.get_current_date() + ".csv"
                 # self.csv_file_1 = open(file_name1,'a+',newline='')
                 # self.writer_1 = csv.writer(self.csv_file_1)
                 # 改为dataframe储存
@@ -847,7 +847,8 @@ class userMain(QMainWindow,Ui_MainWindow):
     
     def save_file_cancel(self):
         try:
-            self.save_df.to_csv(self.file_name1,index=False,mode='a')
+            save_path = path.dirname(path.abspath(__file__)) + self.file_name1
+            self.save_df.to_csv(save_path,index=False,mode='a')
             self.save_df = pd.DataFrame()
             QMessageBox.critical(self,'保存文件成功','保存文件成功，清空DataFrame成功！')
         except:
@@ -1153,7 +1154,7 @@ class userMain(QMainWindow,Ui_MainWindow):
         self.progressBar.setValue(value)
             
     def choosecsv(self):
-        self.csv_name,ok = QFileDialog.getOpenFileName(self,"打开csv文件",'./data/datafile',"csv files(*.csv)")
+        self.csv_name,ok = QFileDialog.getOpenFileName(self,"打开csv文件",'/data/datafile',"csv files(*.csv)")
         print(type(self.csv_name)) #返回了文件绝对路径file_name[0]为绝对路径
         if ok:
             self.lineEdit_3.setText(str(self.csv_name))
@@ -1161,66 +1162,69 @@ class userMain(QMainWindow,Ui_MainWindow):
             QMessageBox.warning(self,"还未选择csv文件",'请选择你要发送的csv文件')
             
     def chougou_cb(self):
-        self.sin_out1.emit('发送重构代码指令......')
-        ZT1 = 'E1'
-        ZT2 = '16'
-        MLZ = '44'
-        
-        file_bin = open(self.bin_file_name,"rb") #二进制读取bin文件
-        self.sin_out1.emit('正在获取二进制bin文件byte数据......')
-        bin_data = file_bin.read() #把全部byte读出来
-        #self.sin_out1.emit('二进制文件数据为：{}'.format(bin_data))
+        try:
+            self.sin_out1.emit('发送重构代码指令......')
+            ZT1 = 'E1'
+            ZT2 = '16'
+            MLZ = '44'
+            
+            file_bin = open(self.bin_file_name,"rb") #二进制读取bin文件
+            self.sin_out1.emit('正在获取二进制bin文件byte数据......')
+            bin_data = file_bin.read() #把全部byte读出来
+            #self.sin_out1.emit('二进制文件数据为：{}'.format(bin_data))
 
-        self.sin_out1.emit('正在获取二进制bin文件byte数据的长度......')
-        bin_length = len(bin_data)  #把字节长度读出来
-        bin_res_length = "".join("{:08X}".format(bin_length))
-        self.sin_out1.emit(f'byte数据的长度为{bin_length}......')
+            self.sin_out1.emit('正在获取二进制bin文件byte数据的长度......')
+            bin_length = len(bin_data)  #把字节长度读出来
+            bin_res_length = "".join("{:08X}".format(bin_length))
+            self.sin_out1.emit(f'byte数据的长度为{bin_length}......')
 
-        #准备发送重构代码指令
-        bin_len_bao_num = bin_length//232 #bin_len_bao表示有多少个232字节的包
-        baonum = "".join("{:04X}".format(bin_len_bao_num + 1))
-        self.sin_out1.emit(f'分包总数为{baonum}')
+            #准备发送重构代码指令
+            bin_len_bao_num = bin_length//232 #bin_len_bao表示有多少个232字节的包
+            baonum = "".join("{:04X}".format(bin_len_bao_num + 1))
+            self.sin_out1.emit(f'分包总数为{baonum}')
 
-        bin_len_shengxia = bin_length%232  #bin_len_shengxia表示除开232字节包后还剩多少字节
-        shengxiawei = "".join("{:02X}".format(bin_len_shengxia))
+            bin_len_shengxia = bin_length%232  #bin_len_shengxia表示除开232字节包后还剩多少字节
+            shengxiawei = "".join("{:02X}".format(bin_len_shengxia))
 
-        self.sin_out1.emit('计算有效长度.....')
-        youxiaolenth = '08'
-        self.sin_out1.emit(f'有效长度{youxiaolenth}')
+            self.sin_out1.emit('计算有效长度.....')
+            youxiaolenth = '08'
+            self.sin_out1.emit(f'有效长度{youxiaolenth}')
 
-        send_order1 = ''.join([ZT1,ZT2,youxiaolenth,MLZ,baonum,bin_res_length]) #这里02可能要改@@@@@
-        self.sin_out1.emit('组合现在的指令为{}'.format(send_order1))
-        
-        #重构数据校验
-        chonggou_str = "".join(["{:02X}".format(i) for i in bin_data])
-        #self.sin_out1.emit(f'重构数据字符串为{chonggou_str}')
-        
-        checksum = 0
-        for i,j in zip(chonggou_str[8::2],chonggou_str[9::2]):
-            checksum += int('0x' + (i + j),16)
-        checksum_chonggou = ('{:08x}'.format(checksum & 0xFFFF)).upper()
-        self.sin_out1.emit(f'重构数据校验和为{checksum_chonggou}')
-        
-        #组装send_order2
-        send_order2 = ''.join([ZT1,ZT2,youxiaolenth,MLZ,baonum,bin_res_length,checksum_chonggou]) #这里02可能要改@@@@@
-        self.sin_out1.emit(f'组装后的指令为{send_order2}')
-        
-        #填充226字节的0x00
-        checksum1 = 0
-        for i,j in zip(send_order2[8::2],send_order2[9::2]):
-            checksum1 += int('0x' + (i + j),16)
-        checksum_end = ('{:04x}'.format(checksum1 & 0xFFFF)).upper()
-        self.sin_out1.emit(f'校验和为{checksum_end}')
-        
-        #组装最后指令
-        send_end = send_order2 + ('00' * 226) + checksum_end
-        self.sin_out1.emit(f'最后的指令为{send_end}')
-        
-        buf_send = bytes.fromhex(send_end)
-        self.sin_out1.emit(f'最后的指令的数据流为{buf_send}')
-        self.com.send_order(buf_send)
-        
-        file_bin.close() #关闭文件
+            send_order1 = ''.join([ZT1,ZT2,youxiaolenth,MLZ,baonum,bin_res_length]) #这里02可能要改@@@@@
+            self.sin_out1.emit('组合现在的指令为{}'.format(send_order1))
+            
+            #重构数据校验
+            chonggou_str = "".join(["{:02X}".format(i) for i in bin_data])
+            #self.sin_out1.emit(f'重构数据字符串为{chonggou_str}')
+            
+            checksum = 0
+            for i,j in zip(chonggou_str[8::2],chonggou_str[9::2]):
+                checksum += int('0x' + (i + j),16)
+            checksum_chonggou = ('{:08x}'.format(checksum & 0xFFFF)).upper()
+            self.sin_out1.emit(f'重构数据校验和为{checksum_chonggou}')
+            
+            #组装send_order2
+            send_order2 = ''.join([ZT1,ZT2,youxiaolenth,MLZ,baonum,bin_res_length,checksum_chonggou]) #这里02可能要改@@@@@
+            self.sin_out1.emit(f'组装后的指令为{send_order2}')
+            
+            #填充226字节的0x00
+            checksum1 = 0
+            for i,j in zip(send_order2[8::2],send_order2[9::2]):
+                checksum1 += int('0x' + (i + j),16)
+            checksum_end = ('{:04x}'.format(checksum1 & 0xFFFF)).upper()
+            self.sin_out1.emit(f'校验和为{checksum_end}')
+            
+            #组装最后指令
+            send_end = send_order2 + ('00' * 226) + checksum_end
+            self.sin_out1.emit(f'最后的指令为{send_end}')
+            
+            buf_send = bytes.fromhex(send_end)
+            self.sin_out1.emit(f'最后的指令的数据流为{buf_send}')
+            self.com.send_order(buf_send)
+            
+            file_bin.close() #关闭文件
+        except:
+            QMessageBox.warning(self,"错误","未选择文件，请先选择文件")
         
         
         
