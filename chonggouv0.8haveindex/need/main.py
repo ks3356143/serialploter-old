@@ -1217,7 +1217,7 @@ class userMain(QMainWindow,Ui_MainWindow):
             self.sin_out1.emit(f'校验和为{checksum_end}')
             
             #组装最后指令
-            send_end = send_order2 + ('00' * 226) + checksum_end
+            send_end = send_order2 + ('00' * 225) + checksum_end
             self.sin_out1.emit(f'最后的指令为{send_end}')
             
             buf_send = bytes.fromhex(send_end)
