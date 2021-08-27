@@ -1432,19 +1432,22 @@ class Send_bin_Thread(QtCore.QThread):
             
             
         #最后小包发一次
+        print('包的lenth为',bin_len_bao_num)
         temp2 = bin_data_str[bin_len_bao_num*464:]
-        youxiao_lenth_last = "{:02X}".format(bin_len_shengxia)
+        youxiao_lenth_last = "{:02X}".format(bin_len_shengxia + 2)
         bao_xuhao_last = "{:04X}".format(bin_len_bao_num + 1)
         #填充"00"
+        print('尾包长度',bin_len_shengxia)
         send_bao_last_temp = "".join([ZT1,ZT2,youxiao_lenth_last,MLZ,bao_xuhao_last,temp2,'00'*(232 - bin_len_shengxia)])
         
         checksum_last = 0
         for l,n in zip(send_bao_last_temp[8::2],send_bao_last_temp[9::2]):
             checksum_last += int('0x' + (l + n),16)
         checksum_fenbao_last = ('{:04x}'.format(checksum_last & 0xFFFF)).upper()
-        self.sin_out.emit(f'重构数据校验和为{checksum_fenbao_last}')
+        self.sin_out.emit(f'重构数据校验和为:{checksum_fenbao_last}')
         
         send_bao_last = "".join([ZT1,ZT2,youxiao_lenth_last,MLZ,bao_xuhao_last,temp2,'00'*(232 - bin_len_shengxia),checksum_fenbao_last])
+        self.sin_out.emit('发送尾包指令为{}'.format(send_bao_last))
         
         buf2 = bytes.fromhex(send_bao_last)
         self.parent.com.send_order(buf2)
